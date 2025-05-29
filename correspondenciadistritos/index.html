@@ -25,9 +25,13 @@
       <strong>distrito local</strong>, o usa el buscador global (arriba a la derecha).
       Haz clic en <em>Ver PDF</em> para abrir el archivo correspondiente.
     </p>
+    <p></p>
+    Descarga la guia de votación en <a href="pdfs/GuiaCDMXeleccionPoderJudicial.pdf" target="_blank">este link</a>
+    </p>
+
 
     <!-- Filtros -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3 align-items-end">
       <div class="col-sm-6 col-md-4 col-lg-3">
         <label for="filtroAlcaldia" class="form-label mb-1">Alcaldía</label>
         <select id="filtroAlcaldia" class="form-select">
@@ -48,6 +52,12 @@
           <option value="">Todos</option>
         </select>
       </div>
+
+      <div class="col-12 col-lg-auto">
+        <button id="btnReset" class="btn btn-outline-secondary mt-2 mt-lg-0">
+          Restablecer filtros
+        </button>
+      </div>
     </div>
 
     <!-- Tabla -->
@@ -65,7 +75,12 @@
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
   <script>
-    let dt; // referencia global a DataTable
+    let dt;                                  // referencia global a DataTable
+    const filtros = [                        // mapeo select – índice de columna
+      { sel: '#filtroAlcaldia',    col: 1 },
+      { sel: '#filtroDistritoFed', col: 2 },
+      { sel: '#filtroDistritoLoc', col: 4 }
+    ];
 
     fetch('distritos.json')
       .then(r => r.json())
@@ -88,18 +103,32 @@
         language: { url:'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json' }
       });
 
-      poblarSelect('#filtroAlcaldia',    1); // Alcaldía
-      poblarSelect('#filtroDistritoFed', 2); // Distrito federal
-      poblarSelect('#filtroDistritoLoc', 4); // Distrito local
+      // Poblamos y conectamos cada filtro
+      filtros.forEach(f => poblarSelect(f.sel, f.col));
+
+      // Actualizamos opciones habilitadas cada vez que cambian filtros o buscador
+      dt.on('draw', actualizarDisponibles);
+
+      // Botón Reset
+      document.getElementById('btnReset').addEventListener('click', () => {
+        filtros.forEach(f => {
+          const select = document.querySelector(f.sel);
+          select.value = '';
+          dt.column(f.col).search('');
+        });
+        dt.search('');          // limpia buscador global
+        dt.draw();
+      });
     }
 
-    // Rellena un <select> con valores únicos de la columna indicada
+    /* -------- Poblado inicial de cada <select> -------- */
     function poblarSelect(selector, colIdx) {
       const valores = [...new Set(
         dt.column(colIdx).data().toArray().map(v => String(v).trim())
-      )].sort((a, b) => a.localeCompare(b, 'es', {numeric:true}));
+      )].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
 
       const select = document.querySelector(selector);
+
       valores.forEach(v => {
         const opt = document.createElement('option');
         opt.value = v;
@@ -107,16 +136,33 @@
         select.appendChild(opt);
       });
 
-      // Filtra al cambiar
+      // Filtrado exacto al cambiar
       select.addEventListener('change', e => {
         const val = $.fn.dataTable.util.escapeRegex(e.target.value);
         dt.column(colIdx)
-          .search(val ? '^' + val + '$' : '', true, false) // coincidencia exacta
+          .search(val ? `^${val}$` : '', true, false)
           .draw();
       });
     }
 
-    // Botón para abrir PDF
+    /* ---- Habilita/deshabilita opciones que no tienen resultados ---- */
+    function actualizarDisponibles() {
+      filtros.forEach(f => {
+        const select   = document.querySelector(f.sel);
+        const colData  = dt.column(f.col, {search:'applied'}).data().toArray();
+        const visibles = new Set(colData.map(v => String(v).trim()));
+
+        [...select.options].forEach(opt => {
+          if (opt.value === '') {
+            opt.disabled = false;                // “Todas” siempre habilitado
+          } else {
+            opt.disabled = !visibles.has(opt.value);
+          }
+        });
+      });
+    }
+
+    /* ---- Renderiza botón PDF ---- */
     function linkPDF(nombre) {
       return nombre
         ? `<a class="btn btn-sm btn-primary"
