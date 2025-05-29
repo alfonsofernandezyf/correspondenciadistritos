@@ -21,27 +21,36 @@
     <h1 class="text-center mb-3">Consulta de Distritos</h1>
 
     <p class="lead">
-      Selecciona tu <strong>alcaldía</strong> o el <strong>distrito federal</strong> para
-      filtrar la lista, o usa el cuadro de búsqueda (arriba a la derecha).
+      Filtra por <strong>alcaldía</strong>, <strong>distrito federal</strong> o
+      <strong>distrito local</strong>, o usa el buscador global (arriba a la derecha).
       Haz clic en <em>Ver PDF</em> para abrir el archivo correspondiente.
     </p>
 
+    <!-- Filtros -->
     <div class="row g-3 mb-3">
-      <div class="col-sm-6 col-md-4">
+      <div class="col-sm-6 col-md-4 col-lg-3">
         <label for="filtroAlcaldia" class="form-label mb-1">Alcaldía</label>
         <select id="filtroAlcaldia" class="form-select">
           <option value="">Todas</option>
         </select>
       </div>
 
-      <div class="col-sm-6 col-md-4">
-        <label for="filtroDistrito" class="form-label mb-1">Distrito federal</label>
-        <select id="filtroDistrito" class="form-select">
+      <div class="col-sm-6 col-md-4 col-lg-3">
+        <label for="filtroDistritoFed" class="form-label mb-1">Distrito federal</label>
+        <select id="filtroDistritoFed" class="form-select">
+          <option value="">Todos</option>
+        </select>
+      </div>
+
+      <div class="col-sm-6 col-md-4 col-lg-3">
+        <label for="filtroDistritoLoc" class="form-label mb-1">Distrito local</label>
+        <select id="filtroDistritoLoc" class="form-select">
           <option value="">Todos</option>
         </select>
       </div>
     </div>
 
+    <!-- Tabla -->
     <table id="tablaDistritos"
            class="table table-striped table-bordered nowrap w-100"></table>
   </div>
@@ -56,7 +65,7 @@
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
   <script>
-    let dt; // referencia global a la tabla
+    let dt; // referencia global a DataTable
 
     fetch('distritos.json')
       .then(r => r.json())
@@ -76,18 +85,19 @@
         ],
         responsive: true,
         pageLength: 25,
-        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json' }
+        language: { url:'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json' }
       });
 
-      poblarSelect('#filtroAlcaldia', 1); // columna 1 = Alcaldía
-      poblarSelect('#filtroDistrito', 2); // columna 2 = Distrito Federal
+      poblarSelect('#filtroAlcaldia',    1); // Alcaldía
+      poblarSelect('#filtroDistritoFed', 2); // Distrito federal
+      poblarSelect('#filtroDistritoLoc', 4); // Distrito local
     }
 
-    // versión corregida
+    // Rellena un <select> con valores únicos de la columna indicada
     function poblarSelect(selector, colIdx) {
       const valores = [...new Set(
-        dt.column(colIdx).data().toArray().map(v => v.trim())
-      )].sort((a, b) => a.localeCompare(b, 'es'));
+        dt.column(colIdx).data().toArray().map(v => String(v).trim())
+      )].sort((a, b) => a.localeCompare(b, 'es', {numeric:true}));
 
       const select = document.querySelector(selector);
       valores.forEach(v => {
@@ -97,6 +107,7 @@
         select.appendChild(opt);
       });
 
+      // Filtra al cambiar
       select.addEventListener('change', e => {
         const val = $.fn.dataTable.util.escapeRegex(e.target.value);
         dt.column(colIdx)
@@ -105,6 +116,7 @@
       });
     }
 
+    // Botón para abrir PDF
     function linkPDF(nombre) {
       return nombre
         ? `<a class="btn btn-sm btn-primary"
