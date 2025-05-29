@@ -3,175 +3,66 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Consulta de Distritos</title>
+  <title>Guía Judicial 2025 · CDMX</title>
 
-  <!-- Bootstrap 5 -->
+  <!-- Bootstrap 5 para estilos rápidos -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 
-  <!-- DataTables 1.13.8 + Bootstrap 5 + Responsive -->
-  <link rel="stylesheet"
-        href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
-  <link rel="stylesheet"
-        href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+  <style>
+    body { min-height: 100vh; display:flex; align-items:center; }
+    .card-intro { max-width: 880px; margin:auto; }
+  </style>
 </head>
 <body class="bg-light">
 
-  <div class="container py-4">
-    <h1 class="text-center mb-3">Consulta de Distritos</h1>
+  <div class="card shadow card-intro">
+    <div class="card-body p-4">
+      <h1 class="card-title text-center mb-3">
+        G U Í A&nbsp;para la elección del&nbsp;Poder&nbsp;Judicial<br>
+        <small class="h4 fw-normal">Ciudad de México · 2025</small>
+      </h1>
 
-    <p class="lead">
-      Filtra por <strong>alcaldía</strong>, <strong>distrito federal</strong> o
-      <strong>distrito local</strong>, o usa el buscador global (arriba a la derecha).
-      Haz clic en <em>Ver PDF</em> para abrir el archivo correspondiente.
-      <br>
-      Si conoces tu numero de sección escribelo en el cuadro de búsqueda.
-      <br>
-      Descarga la guia de votación en <a href="pdfs/GuiaCDMXeleccionPoderJudicial.pdf" target="_blank">este link</a>
+      <p class="card-text">
+        Organizaciones de base social en lucha, académicas y abogados
+        comprometidos con la transformación del sistema judicial mexicano
+        elaboramos esta guía y propuesta para la próxima elección de jueces,
+        magistrados y ministros aplicable a la Ciudad de México.
+      </p>
 
-    </p>
+      <p class="card-text">
+        Consultamos trayectorias profesionales, antecedentes de corrupción,
+        nepotismo o sesgos, así como testimonios de movimientos sociales y
+        periodistas críticos. El resultado es una lista perfectible, pero
+        rigurosa, que te ayudará a emitir un voto informado y exigir cuentas a
+        quienes aspiren a impartir justicia.
+      </p>
 
+      <p class="card-text fw-bold">
+        Amiga/o citadina/o: revisa la guía y, si te convence, ¡compártela!
+      </p>
 
-    <!-- Filtros -->
-    <div class="row g-3 mb-3 align-items-end">
-      <div class="col-sm-6 col-md-4 col-lg-3">
-        <label for="filtroAlcaldia" class="form-label mb-1">Alcaldía</label>
-        <select id="filtroAlcaldia" class="form-select">
-          <option value="">Todas</option>
-        </select>
+      <div class="alert alert-secondary small">
+        <strong>Descarga directa:</strong>
+        <a href="pdfs/GuiaCDMXeleccionPoderJudicial.pdf" target="_blank"
+           class="link-primary">Guía de votación en PDF</a>
       </div>
 
-      <div class="col-sm-6 col-md-4 col-lg-3">
-        <label for="filtroDistritoFed" class="form-label mb-1">Distrito federal</label>
-        <select id="filtroDistritoFed" class="form-select">
-          <option value="">Todos</option>
-        </select>
-      </div>
+      <p class="mb-4">
+        Si ya conoces tu número de <em>sección</em> electoral, escríbelo en el
+        buscador de la siguiente página para ir directo a tus distritos. Si no
+        lo conoces, puedes localizarlo con tu credencial del INE y después usar
+        nuestra tabla.
+      </p>
 
-      <div class="col-sm-6 col-md-4 col-lg-3">
-        <label for="filtroDistritoLoc" class="form-label mb-1">Distrito local</label>
-        <select id="filtroDistritoLoc" class="form-select">
-          <option value="">Todos</option>
-        </select>
-      </div>
-
-      <div class="col-12 col-lg-auto">
-        <button id="btnReset" class="btn btn-outline-secondary mt-2 mt-lg-0">
-          Restablecer filtros
-        </button>
+      <div class="text-center">
+        <a href="buscador.html" class="btn btn-primary btn-lg">
+          Entrar&nbsp;al&nbsp;buscador&nbsp;de&nbsp;distritos
+        </a>
       </div>
     </div>
-
-    <!-- Tabla -->
-    <table id="tablaDistritos"
-           class="table table-striped table-bordered nowrap w-100"></table>
   </div>
 
-  <!-- JS -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-  <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
-
-  <script>
-    let dt;                                  // referencia global a DataTable
-    const filtros = [                        // mapeo select – índice de columna
-      { sel: '#filtroAlcaldia',    col: 1 },
-      { sel: '#filtroDistritoFed', col: 2 },
-      { sel: '#filtroDistritoLoc', col: 4 }
-    ];
-
-    fetch('distritos.json')
-      .then(r => r.json())
-      .then(crearTabla)
-      .catch(err => console.error('No se pudo leer distritos.json', err));
-
-    function crearTabla(data) {
-      dt = $('#tablaDistritos').DataTable({
-        data,
-        columns: [
-          { title: 'Sección',          data: 'SECCIÓN' },
-          { title: 'Alcaldía',         data: 'DEMARCACIÓN TERRITORIAL' },
-          { title: 'Distrito Federal', data: 'DISTRITO JUDICIAL ELECTORAL FEDERAL' },
-          { title: 'PDF Federal',      data: 'ArchivoJudicial', render: linkPDF },
-          { title: 'Distrito Local',   data: 'DISTRITO JUDICIAL ELECTORAL LOCAL' },
-          { title: 'PDF Local',        data: 'ArchivoLocal',    render: linkPDF }
-        ],
-        responsive: true,
-        pageLength: 25,
-        language: { url:'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-MX.json' }
-      });
-
-      // Poblamos y conectamos cada filtro
-      filtros.forEach(f => poblarSelect(f.sel, f.col));
-
-      // Actualizamos opciones habilitadas cada vez que cambian filtros o buscador
-      dt.on('draw', actualizarDisponibles);
-
-      // Botón Reset
-      document.getElementById('btnReset').addEventListener('click', () => {
-        filtros.forEach(f => {
-          const select = document.querySelector(f.sel);
-          select.value = '';
-          dt.column(f.col).search('');
-        });
-        dt.search('');          // limpia buscador global
-        dt.draw();
-      });
-    }
-
-    /* -------- Poblado inicial de cada <select> -------- */
-    function poblarSelect(selector, colIdx) {
-      const valores = [...new Set(
-        dt.column(colIdx).data().toArray().map(v => String(v).trim())
-      )].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
-
-      const select = document.querySelector(selector);
-
-      valores.forEach(v => {
-        const opt = document.createElement('option');
-        opt.value = v;
-        opt.textContent = v;
-        select.appendChild(opt);
-      });
-
-      // Filtrado exacto al cambiar
-      select.addEventListener('change', e => {
-        const val = $.fn.dataTable.util.escapeRegex(e.target.value);
-        dt.column(colIdx)
-          .search(val ? `^${val}$` : '', true, false)
-          .draw();
-      });
-    }
-
-    /* ---- Habilita/deshabilita opciones que no tienen resultados ---- */
-    function actualizarDisponibles() {
-      filtros.forEach(f => {
-        const select   = document.querySelector(f.sel);
-        const colData  = dt.column(f.col, {search:'applied'}).data().toArray();
-        const visibles = new Set(colData.map(v => String(v).trim()));
-
-        [...select.options].forEach(opt => {
-          if (opt.value === '') {
-            opt.disabled = false;                // “Todas” siempre habilitado
-          } else {
-            opt.disabled = !visibles.has(opt.value);
-          }
-        });
-      });
-    }
-
-    /* ---- Renderiza botón PDF ---- */
-    function linkPDF(nombre) {
-      return nombre
-        ? `<a class="btn btn-sm btn-primary"
-               href="pdfs/${encodeURIComponent(nombre)}"
-               target="_blank" rel="noopener">Ver PDF</a>`
-        : '';
-    }
-  </script>
 </body>
 </html>
