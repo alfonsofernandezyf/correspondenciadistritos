@@ -22,10 +22,9 @@
 
     <!-- Instrucciones -->
     <p class="lead">
-      Selecciona tu <strong>alcaldía</strong> o el <strong>número de distrito federal</strong> para
-      filtrar la lista, o usa el cuadro de búsqueda (arriba a la derecha) para
-      encontrar cualquier dato. Haz clic en <em>Ver PDF</em> para abrir el archivo
-      correspondiente en una nueva pestaña.
+      Selecciona tu <strong>alcaldía</strong> o el <strong>distrito federal</strong> para
+      filtrar la lista, o usa el cuadro de búsqueda (arriba a la derecha).
+      Haz clic en <em>Ver PDF</em> para abrir el archivo correspondiente.
     </p>
 
     <!-- Filtros -->
@@ -56,12 +55,14 @@
 
   <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
   <script>
-    let dt;   // referencia global a la tabla
+    let dt; // referencia global a la tabla
 
+    // Cargar JSON y arrancar DataTable
     fetch('distritos.json')
       .then(r => r.json())
       .then(crearTabla)
@@ -85,15 +86,20 @@
         }
       });
 
-      // Poblar selects con valores únicos
-      poblarSelect('#filtroAlcaldia', 1);   // columna 1 = Alcaldía
-      poblarSelect('#filtroDistrito', 2);   // columna 2 = Distrito Federal
+      // Poblar select de Alcaldía (columna 1) y Distrito (columna 2)
+      poblarSelect('#filtroAlcaldia', 1);
+      poblarSelect('#filtroDistrito', 2);
     }
 
-    // Crea opciones únicas para cada filtro
+    // Rellena un <select> con los valores únicos de la columna indicada
     function poblarSelect(selector, colIdx) {
-      const colData = dt.column(colIdx).data();
-      const valores = [...new Set(colData)].sort((a,b)=>a.localeCompare(b,'es'));
+      const valores = dt
+        .column(colIdx)
+        .data()
+        .unique()        // sin duplicados
+        .toArray()       // convierte a Array
+        .sort((a, b) => a.localeCompare(b, 'es'));
+
       const select = document.querySelector(selector);
 
       valores.forEach(v => {
@@ -103,14 +109,16 @@
         select.appendChild(opt);
       });
 
-      // evento de filtrado
+      // Filtrado exacto al cambiar
       select.addEventListener('change', e => {
-        const val = e.target.value;
-        dt.column(colIdx).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw();
+        const val = $.fn.dataTable.util.escapeRegex(e.target.value);
+        dt.column(colIdx)
+          .search(val ? '^' + val + '$' : '', true, false) // ^…$ para coincidencia exacta
+          .draw();
       });
     }
 
-    // Genera enlace al PDF
+    // Renderiza un botón con enlace al PDF
     function linkPDF(nombre) {
       return nombre
         ? `<a class="btn btn-sm btn-primary"
